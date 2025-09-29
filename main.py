@@ -406,7 +406,7 @@ async def start_handler(_, message):
     reply_markup = InlineKeyboardMarkup(buttons)
 
     await message.reply_photo(
-        animation=start_animation,
+        photo=start_animation,
         caption=caption,
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=reply_markup
