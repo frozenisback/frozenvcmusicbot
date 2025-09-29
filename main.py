@@ -378,7 +378,7 @@ async def start_handler(_, message):
     support_group = os.getenv("SUPPORT_GROUP", "https://t.me/Frozensupport1")
     start_animation = os.getenv(
         "START_ANIMATION",
-        "https://frozen-imageapi.lagendplayersyt.workers.dev/file/2e483e17-05cb-45e2-b166-1ea476ce9521.mp4"
+        "https://filehosting.kustbotsweb.workers.dev/KuZ.jpg"
     )
 
     caption = (
@@ -405,7 +405,7 @@ async def start_handler(_, message):
     ]
     reply_markup = InlineKeyboardMarkup(buttons)
 
-    await message.reply_animation(
+    await message.reply_photo(
         animation=start_animation,
         caption=caption,
         parse_mode=ParseMode.MARKDOWN,
