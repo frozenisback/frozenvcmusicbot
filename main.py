@@ -288,6 +288,9 @@ async def fetch_youtube_link(query):
     except Exception as e:
         raise Exception(f"Failed to fetch YouTube link: {str(e)}")
 
+BACKUP_SEARCH_API_URL = "https://odd-block-a945.tenopno.workers.dev"
+
+
 
     
 async def fetch_youtube_link_backup(query):
