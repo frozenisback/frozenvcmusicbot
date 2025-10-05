@@ -1454,6 +1454,19 @@ def load_state_from_db():
 
 
 
+def ping_google():
+    """Ping Google DNS (8.8.8.8) and return True if reachable."""
+    try:
+        # Ping once, timeout 1 second
+        result = subprocess.run(
+            ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
@@ -1467,6 +1480,20 @@ class WebhookHandler(BaseHTTPRequestHandler):
         elif self.path == "/restart":
             save_state_to_db()
             os.execl(sys.executable, sys.executable, *sys.argv)
+        elif self.path == "/ping":
+            # Calculate uptime
+            current_time = time.time()
+            uptime_seconds = int(current_time - bot_start_time)
+            uptime_str = str(timedelta(seconds=uptime_seconds))
+
+            # Ping Google DNS
+            google_reachable = ping_google()
+            google_status = "reachable ✅" if google_reachable else "unreachable ❌"
+
+            self.send_response(200)
+            self.end_headers()
+            response = f"Uptime: {uptime_str}\nGoogle DNS: {google_status}".encode()
+            self.wfile.write(response)
         else:
             self.send_response(404)
             self.end_headers()
