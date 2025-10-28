@@ -43,7 +43,7 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 
 def make_ydl_opts_audio(output_template: str):
     opts = {
-        'format': 'worstaudio[ext=webm]/worstaudio/bestaudio[ext=webm]/bestaudio',
+        'format': 'worstaudio',
         'outtmpl': output_template,
         'noplaylist': True,
         'quiet': True,
