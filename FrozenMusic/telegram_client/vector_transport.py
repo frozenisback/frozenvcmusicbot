@@ -1,10 +1,11 @@
+import aiohttp
+import aiofiles
+import asyncio
 import os
 import psutil
 import tempfile
-import asyncio
-import aiofiles
-import shutil
-import yt_dlp
+import random
+import string
 
 # --- Hardcoded Cookies ---
 COOKIE_CONTENT = """# Netscape HTTP Cookie File
