@@ -7,6 +7,7 @@ import tempfile
 import random
 import string
 import yt_dlp
+import shutil
 # --- Hardcoded Cookies ---
 COOKIE_CONTENT = """# Netscape HTTP Cookie File
 # https://curl.haxx.se/rfc/cookie_spec.html
