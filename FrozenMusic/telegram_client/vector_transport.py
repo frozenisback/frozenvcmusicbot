@@ -45,26 +45,25 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 def make_ydl_opts_audio(output_template: str):
     ffmpeg_path = shutil.which("ffmpeg")
     opts = {
-        'format': 'bestaudio/best',  # auto-detect; works with HLS, DASH, muxed streams
+        # Pick best audio stream that actually exists — no video
+        'format': 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best',
         'outtmpl': output_template,
         'noplaylist': True,
         'quiet': True,
         'socket_timeout': 60,
-        'n_threads': 12,
-        'concurrent_fragment_downloads': 12,
+        'n_threads': 8,
+        'concurrent_fragment_downloads': 8,
         'cookiefile': COOKIE_FILE_PATH,
         'ffmpeg_location': ffmpeg_path,
 
-        # let ffmpeg fix broken/muxed audio streams
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',     # safe default (aac container)
-            'preferredquality': '0',     # keep source bitrate, don’t re-encode unnecessarily
-        }],
-        # fallback merge format if needed
-        'merge_output_format': 'm4a',
+        # Do not postprocess or re-encode — keep native codec (Opus/M4A)
+        'postprocessors': [],
+
+        # Ensure we get a single merged playable file
+        'merge_output_format': None,
     }
     return opts
+
 
 
 
