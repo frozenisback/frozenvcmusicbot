@@ -3,7 +3,9 @@ import glob
 import tempfile
 import asyncio
 import psutil
+import subprocess
 import yt_dlp
+
 
 # --- Hardcoded Cookies ---
 COOKIE_CONTENT = """# Netscape HTTP Cookie File
