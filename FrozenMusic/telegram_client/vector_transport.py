@@ -42,17 +42,21 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 def make_ydl_opts_audio(output_template: str):
     ffmpeg_path = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
     opts = {
-        # ask yt-dlp for the worst-quality audio available and let it pick container/codec
-        'format': 'worstaudio',
-        'outtmpl': output_template,   # allow %(ext)s in template so yt-dlp can choose extension
+        # don't force any input format — yt-dlp can choose best available
+        'format': 'bestaudio/best',
+        'outtmpl': output_template,
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
         'socket_timeout': 60,
-        # if yt-dlp decides it needs ffmpeg it can use this path (we don't force postprocessing)
         'ffmpeg_location': ffmpeg_path,
-        # keep other performance hints if you want; not forcing any format conversions
         'concurrent_fragment_downloads': 4,
+        # postprocess only to ensure we get a .webm audio file for PyTgCalls
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'webm',
+            'preferredquality': '0',
+        }],
     }
     if 'COOKIE_FILE_PATH' in globals() and COOKIE_FILE_PATH:
         opts['cookiefile'] = COOKIE_FILE_PATH
@@ -61,19 +65,17 @@ def make_ydl_opts_audio(output_template: str):
 
 async def vector_transport_resolver(url: str) -> str:
     """
-    Resolve URL -> local file by asking yt-dlp for the worst-quality audio available.
-    Does NOT force containers/codecs or run postprocessing; if yt-dlp needs ffmpeg it may call it.
+    Download any available format via yt-dlp, then postprocess into .webm audio.
+    Compatible with PyTgCalls.
     """
-    # quick local-file shortcut
     if os.path.exists(url) and os.path.isfile(url):
         return url
 
-    # cache shortcut
     if 'SHARD_CACHE_MATRIX' in globals() and url in SHARD_CACHE_MATRIX:
         return SHARD_CACHE_MATRIX[url]
 
     try:
-        # try to lower process priority (best-effort)
+        # lower process priority to idle/nice 19
         try:
             proc = psutil.Process(os.getpid())
             if os.name == "nt":
@@ -81,10 +83,9 @@ async def vector_transport_resolver(url: str) -> str:
             else:
                 proc.nice(19)
         except Exception:
-            # ignore if we can't change priority
             pass
 
-        # create a temp base name and let yt-dlp append the real extension
+        # create temp base name
         base = tempfile.NamedTemporaryFile(delete=False)
         base_name = base.name
         base.close()
@@ -95,37 +96,27 @@ async def vector_transport_resolver(url: str) -> str:
 
         def download_audio():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                # yt-dlp will pick the worst audio and choose container/codec itself
                 ydl.download([url])
 
         await loop.run_in_executor(None, download_audio)
 
-        # find downloaded file (base_name.*)
-        matches = glob.glob(base_name + ".*")
+        # yt-dlp postprocessor will produce a .webm file
+        matches = glob.glob(base_name + "*.webm")
         if not matches:
-            # cleanup and error
-            try:
-                os.unlink(base_name)
-            except Exception:
-                pass
+            # fallback: pick any file yt-dlp created
+            matches = glob.glob(base_name + ".*")
+
+        if not matches:
             raise Exception("yt-dlp did not produce any output file.")
 
-        # pick the first match (should be one)
         downloaded = matches[0]
 
-        # sanity check file size
         if os.path.getsize(downloaded) == 0:
-            try:
-                os.unlink(downloaded)
-            except Exception:
-                pass
             raise Exception("Downloaded file is empty.")
 
-        # cache and return
         if 'SHARD_CACHE_MATRIX' in globals():
             SHARD_CACHE_MATRIX[url] = downloaded
         return downloaded
 
     except Exception as e:
         raise Exception(f"Error downloading audio: {e}")
-
