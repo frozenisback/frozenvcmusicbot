@@ -15,4 +15,4 @@ asyncpg
 pymongo
 aiofiles
 gender-guesser
-votify
+git+https://github.com/frozenisback/votify.git
