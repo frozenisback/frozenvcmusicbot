@@ -39,24 +39,39 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
     f.write(COOKIE_CONTENT)
 
 
+import os
+import glob
+import tempfile
+import asyncio
+import psutil
+import yt_dlp
+
+# optional globals: COOKIE_FILE_PATH, SHARD_CACHE_MATRIX
+
 def make_ydl_opts_audio(output_template: str):
     ffmpeg_path = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
     opts = {
-        # don't force any input format — yt-dlp can choose best available
-        'format': 'bestaudio/best',
-        'outtmpl': output_template,
+        'format': 'bestaudio/best',     # let yt-dlp pick whatever works
+        'outtmpl': output_template,     # temp name + correct extension
         'noplaylist': True,
         'quiet': True,
         'no_warnings': True,
         'socket_timeout': 60,
         'ffmpeg_location': ffmpeg_path,
         'concurrent_fragment_downloads': 4,
-        # postprocess only to ensure we get a .webm audio file for PyTgCalls
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'webm',
-            'preferredquality': '0',
-        }],
+
+        # first extract audio as-is, then manually convert to .webm
+        'postprocessors': [
+            {  # extract audio without forcing codec
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'opus',
+                'preferredquality': '0',
+            },
+            {  # re-mux result to .webm container
+                'key': 'FFmpegVideoRemuxer',
+                'preferedformat': 'webm'
+            }
+        ],
     }
     if 'COOKIE_FILE_PATH' in globals() and COOKIE_FILE_PATH:
         opts['cookiefile'] = COOKIE_FILE_PATH
@@ -65,8 +80,8 @@ def make_ydl_opts_audio(output_template: str):
 
 async def vector_transport_resolver(url: str) -> str:
     """
-    Download any available format via yt-dlp, then postprocess into .webm audio.
-    Compatible with PyTgCalls.
+    Downloads the best available stream from YouTube and outputs a .webm audio file.
+    Works with PyTgCalls.
     """
     if os.path.exists(url) and os.path.isfile(url):
         return url
@@ -75,24 +90,21 @@ async def vector_transport_resolver(url: str) -> str:
         return SHARD_CACHE_MATRIX[url]
 
     try:
-        # lower process priority to idle/nice 19
+        # lower process priority (optional)
         try:
             proc = psutil.Process(os.getpid())
-            if os.name == "nt":
-                proc.nice(psutil.IDLE_PRIORITY_CLASS)
-            else:
-                proc.nice(19)
+            proc.nice(psutil.IDLE_PRIORITY_CLASS if os.name == "nt" else 19)
         except Exception:
             pass
 
-        # create temp base name
+        # temporary file
         base = tempfile.NamedTemporaryFile(delete=False)
         base_name = base.name
         base.close()
 
-        template = base_name + ".%(ext)s"
+        output_tmpl = base_name + ".%(ext)s"
         loop = asyncio.get_running_loop()
-        ydl_opts = make_ydl_opts_audio(template)
+        ydl_opts = make_ydl_opts_audio(output_tmpl)
 
         def download_audio():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -100,10 +112,9 @@ async def vector_transport_resolver(url: str) -> str:
 
         await loop.run_in_executor(None, download_audio)
 
-        # yt-dlp postprocessor will produce a .webm file
+        # locate resulting .webm file
         matches = glob.glob(base_name + "*.webm")
         if not matches:
-            # fallback: pick any file yt-dlp created
             matches = glob.glob(base_name + ".*")
 
         if not matches:
@@ -120,3 +131,4 @@ async def vector_transport_resolver(url: str) -> str:
 
     except Exception as e:
         raise Exception(f"Error downloading audio: {e}")
+
