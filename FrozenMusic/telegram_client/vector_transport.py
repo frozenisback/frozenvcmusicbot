@@ -42,15 +42,21 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 
 
 def make_ydl_opts_audio(output_template: str):
+    ffmpeg_path = shutil.which("ffmpeg")
     opts = {
-        'format': 'worstaudio',
+        'format': 'bestaudio/best',  # auto-detect, supports m3u8 with audio+video
         'outtmpl': output_template,
         'noplaylist': True,
         'quiet': True,
         'socket_timeout': 60,
         'n_threads': 12,
         'concurrent_fragment_downloads': 12,
+        'merge_output_format': 'm4a',  # fallback if container merge needed
         'cookiefile': COOKIE_FILE_PATH,
+        'ffmpeg_location': ffmpeg_path,
+        'postprocessors': [{
+            'key': 'FFmpegCopyStream',  # directly copy without re-encoding
+        }],
     }
     return opts
 
