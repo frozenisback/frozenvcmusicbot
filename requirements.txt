@@ -15,3 +15,4 @@ asyncpg
 pymongo
 aiofiles
 gender-guesser
+votify
