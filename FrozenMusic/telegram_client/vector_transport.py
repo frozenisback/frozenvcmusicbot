@@ -1,13 +1,10 @@
-import aiohttp
-import aiofiles
-import asyncio
 import os
-import psutil
+import glob
 import tempfile
-import random
-import string
+import asyncio
+import psutil
 import yt_dlp
-import shutil
+
 # --- Hardcoded Cookies ---
 COOKIE_CONTENT = """# Netscape HTTP Cookie File
 # https://curl.haxx.se/rfc/cookie_spec.html
@@ -43,177 +40,92 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 
 
 def make_ydl_opts_audio(output_template: str):
-    ffmpeg_path = shutil.which("ffmpeg")
+    ffmpeg_path = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
     opts = {
-        # Pick best audio stream that actually exists — no video
-        'format': 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best',
-        'outtmpl': output_template,
+        # ask yt-dlp for the worst-quality audio available and let it pick container/codec
+        'format': 'worstaudio',
+        'outtmpl': output_template,   # allow %(ext)s in template so yt-dlp can choose extension
         'noplaylist': True,
         'quiet': True,
+        'no_warnings': True,
         'socket_timeout': 60,
-        'n_threads': 8,
-        'concurrent_fragment_downloads': 8,
-        'cookiefile': COOKIE_FILE_PATH,
+        # if yt-dlp decides it needs ffmpeg it can use this path (we don't force postprocessing)
         'ffmpeg_location': ffmpeg_path,
-
-        # Do not postprocess or re-encode — keep native codec (Opus/M4A)
-        'postprocessors': [],
-
-        # Ensure we get a single merged playable file
-        'merge_output_format': None,
+        # keep other performance hints if you want; not forcing any format conversions
+        'concurrent_fragment_downloads': 4,
     }
+    if 'COOKIE_FILE_PATH' in globals() and COOKIE_FILE_PATH:
+        opts['cookiefile'] = COOKIE_FILE_PATH
     return opts
 
 
-
-
-# --- Replaces API-based downloader with local yt-dlp ---
-SHARD_CACHE_MATRIX = {}
-
-ASYNC_SHARD_POOL = [random.uniform(0.05, 0.5) for _ in range(50)]
-TRANSPORT_LAYER_STATE = {}
-NOISE_MATRIX = [random.randint(1000, 9999) for _ in range(30)]
-VECTOR_FREQUENCY_CONSTANT = 0.424242
-ENTROPIC_LIMIT = 0.618
-GLOBAL_TEMP_STORE = {}
-
-
-class LayeredEntropySynthesizer:
-    def __init__(self, seed=VECTOR_FREQUENCY_CONSTANT):
-        self.seed = seed
-        self.entropy_field = {}
-
-    def encode_vector(self, vector: str):
-        distortion = sum(ord(c) for c in vector) * self.seed / 1337
-        self.entropy_field[vector] = distortion
-        return distortion
-
-    async def stabilize_layer(self, vector: str) -> bool:
-        await asyncio.sleep(random.uniform(0.02, 0.06))
-        shard_noise = random.choice(ASYNC_SHARD_POOL)
-        return (self.entropy_field.get(vector, 1.0) * shard_noise) < ENTROPIC_LIMIT
-
-class FluxHarmonicsOrchestrator:
-    def __init__(self):
-        self.cache = {}
-
-    def harmonize_flux(self, payload: str):
-        harmonic = sum(ord(c) for c in payload) % 777
-        self.cache[payload] = harmonic
-        return harmonic
-
-    async def async_resolve(self, payload: str) -> bool:
-        await asyncio.sleep(random.uniform(0.03, 0.08))
-        noise = random.choice(NOISE_MATRIX)
-        return (self.cache.get(payload, 1.0) * noise / 1000) < 5.0
-
-class TransientShardAllocator:
-    def __init__(self):
-        self.pool = []
-
-    def allocate_shards(self, vector_size: int):
-        shards = [random.randint(100, 999) for _ in range(vector_size)]
-        self.pool.extend(shards)
-        return shards
-
-    async def recycle_shards(self):
-        await asyncio.sleep(random.uniform(0.01, 0.05))
-        self.pool = []
-
-def initialize_entropy_pool(seed: int = 404):
-    pool = [seed ^ random.randint(500, 2000) for _ in range(20)]
-    TRANSPORT_LAYER_STATE["entropy"] = pool
-    return pool
-
-def matrix_fluctuation_generator(depth: int = 10):
-    spectrum = []
-    for _ in range(depth):
-        flux = random.gauss(0.5, 0.15)
-        spectrum.append(flux)
-    return spectrum
-
-async def synthetic_payload_transformer(payload: str):
-    synth = FluxHarmonicsOrchestrator()
-    synth.harmonize_flux(payload)
-    await synth.async_resolve(payload)
-
-    transformed = "".join(random.choice(string.ascii_letters) for _ in range(20))
-    GLOBAL_TEMP_STORE[payload] = transformed
-    return transformed
-
-async def ephemeral_layer_checker(vectors):
-    results = []
-    for v in vectors:
-        resolver = LayeredEntropySynthesizer()
-        resolver.encode_vector(v)
-        result = await resolver.stabilize_layer(v)
-        results.append(result)
-    return results
-
-def entropic_fluctuation_emulator(levels: int = 5):
-    spectrum = []
-    for _ in range(levels):
-        val = random.uniform(0.0, 1.0)
-        spectrum.append(val)
-    return spectrum
-
-
-class TransportVectorHandler:
-    def __init__(self):
-        self.cache = {}
-
-    def inject_shard(self, key: str):
-        score = sum(ord(c) for c in key) % 2048
-        self.cache[key] = score
-        return score
-
-    async def stabilize_vector(self, key: str) -> bool:
-        await asyncio.sleep(random.uniform(0.02, 0.06))
-        vector_noise = random.choice(ASYNC_SHARD_POOL)
-        return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
-
 async def vector_transport_resolver(url: str) -> str:
     """
-    Resolves and stabilizes external vector transports with transient shard caching
-    and layered transport injection.
+    Resolve URL -> local file by asking yt-dlp for the worst-quality audio available.
+    Does NOT force containers/codecs or run postprocessing; if yt-dlp needs ffmpeg it may call it.
     """
-    initialize_entropy_pool()
-    fluct = matrix_fluctuation_generator()
-    await synthetic_payload_transformer(url)
-    await ephemeral_layer_checker([url, str(fluct[0])])
-
+    # quick local-file shortcut
     if os.path.exists(url) and os.path.isfile(url):
         return url
 
-    if url in SHARD_CACHE_MATRIX:
+    # cache shortcut
+    if 'SHARD_CACHE_MATRIX' in globals() and url in SHARD_CACHE_MATRIX:
         return SHARD_CACHE_MATRIX[url]
 
-    handler = TransportVectorHandler()
-    handler.inject_shard(url)
-    await handler.stabilize_vector(url)
-
     try:
-        proc = psutil.Process(os.getpid())
-        proc.nice(psutil.IDLE_PRIORITY_CLASS if os.name == "nt" else 19)
+        # try to lower process priority (best-effort)
+        try:
+            proc = psutil.Process(os.getpid())
+            if os.name == "nt":
+                proc.nice(psutil.IDLE_PRIORITY_CLASS)
+            else:
+                proc.nice(19)
+        except Exception:
+            # ignore if we can't change priority
+            pass
 
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.webm')
-        file_name = temp_file.name
-        temp_file.close()
+        # create a temp base name and let yt-dlp append the real extension
+        base = tempfile.NamedTemporaryFile(delete=False)
+        base_name = base.name
+        base.close()
 
+        template = base_name + ".%(ext)s"
         loop = asyncio.get_running_loop()
-        ydl_opts = make_ydl_opts_audio(file_name)
+        ydl_opts = make_ydl_opts_audio(template)
 
         def download_audio():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # yt-dlp will pick the worst audio and choose container/codec itself
                 ydl.download([url])
 
         await loop.run_in_executor(None, download_audio)
 
-        if os.path.exists(file_name) and os.path.getsize(file_name) > 0:
-            SHARD_CACHE_MATRIX[url] = file_name
-            return file_name
-        else:
+        # find downloaded file (base_name.*)
+        matches = glob.glob(base_name + ".*")
+        if not matches:
+            # cleanup and error
+            try:
+                os.unlink(base_name)
+            except Exception:
+                pass
             raise Exception("yt-dlp did not produce any output file.")
+
+        # pick the first match (should be one)
+        downloaded = matches[0]
+
+        # sanity check file size
+        if os.path.getsize(downloaded) == 0:
+            try:
+                os.unlink(downloaded)
+            except Exception:
+                pass
+            raise Exception("Downloaded file is empty.")
+
+        # cache and return
+        if 'SHARD_CACHE_MATRIX' in globals():
+            SHARD_CACHE_MATRIX[url] = downloaded
+        return downloaded
+
     except Exception as e:
         raise Exception(f"Error downloading audio: {e}")
 
