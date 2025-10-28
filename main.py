@@ -1454,130 +1454,34 @@ def load_state_from_db():
 
 
 
-def ping_google():
-    """Ping Google DNS (8.8.8.8) and return True if reachable."""
-    try:
-        # Ping once, timeout 1 second
-        result = subprocess.run(
-            ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
-
-class WebhookHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Bot is running!")
-        elif self.path == "/status":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Bot status: Running")
-        elif self.path == "/restart":
-            save_state_to_db()
-            os.execl(sys.executable, sys.executable, *sys.argv)
-        elif self.path == "/ping":
-            # Calculate uptime
-            current_time = time.time()
-            uptime_seconds = int(current_time - bot_start_time)
-            uptime_str = str(timedelta(seconds=uptime_seconds))
-
-            # Ping Google DNS
-            google_reachable = ping_google()
-            google_status = "reachable ✅" if google_reachable else "unreachable ❌"
-
-            self.send_response(200)
-            self.end_headers()
-            response = f"Uptime: {uptime_str}\nGoogle DNS: {google_status}".encode()
-            self.wfile.write(response)
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_POST(self):
-        if self.path == "/webhook":
-            try:
-                length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(length)
-                update = json.loads(body)
-                bot._process_update(update)
-            except Exception as e:
-                print("Error processing update:", e)
-            self.send_response(200)
-            self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-
-def run_http_server():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("", port), WebhookHandler)
-    print(f"HTTP server running on port {port}")
-    server.serve_forever()
-
-
-threading.Thread(target=run_http_server, daemon=True).start()
-
-
 logger = logging.getLogger(__name__)
 
-frozen_check_event = asyncio.Event()
+RESTART_CHANNEL_ID = -1001849376366  # Your channel/chat ID
 
-async def restart_bot():
-    port = int(os.environ.get("PORT", 8080))
-    url = f"http://localhost:{port}/restart"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    logger.info("Local restart endpoint triggered successfully.")
-                else:
-                    logger.error(f"Local restart endpoint failed: {resp.status}")
-    except Exception as e:
-        logger.error(f"Error calling local restart endpoint: {e}")
-
-async def frozen_check_loop(bot_username: str):
+async def heartbeat():
     while True:
+        await asyncio.sleep(6 * 3600)  # every 10 hours
         try:
-            # 1) send the check command
-            await assistant.send_message(bot_username, "/frozen_check")
-            logger.info(f"Sent /frozen_check to @{bot_username}")
+            logger.info("💤 Heartbeat: performing full restart to prevent MTProto freeze...")
 
-            # 2) poll for a reply for up to 30 seconds
-            deadline = time.time() + 30
-            got_ok = False
+            # Notify channel before restart
+            pre_msg = None
+            try:
+                pre_msg = await bot.send_message(RESTART_CHANNEL_ID, "⚡ Bot is restarting (scheduled heartbeat)")
+            except Exception as e:
+                logger.warning(f"Failed to notify channel about restart: {e}")
 
-            while time.time() < deadline:
-                async for msg in assistant.get_chat_history(bot_username, limit=1):
-                    text = msg.text or ""
-                    if "frozen check successful ✨" in text.lower():
-                        got_ok = True
-                        logger.info("Received frozen check confirmation.")
-                        break
-                if got_ok:
-                    break
-                await asyncio.sleep(3)
+            # Save state to DB
+            save_state_to_db()
+            logger.info("✅ Bot state saved to DB")
 
-            # 3) if no confirmation, restart
-            if not got_ok:
-                logger.warning("No frozen check reply—restarting bot.")
-                await restart_bot()
+            # Fully restart the process (like /restart endpoint)
+            os.execl(sys.executable, sys.executable, *sys.argv)
 
         except Exception as e:
-            logger.error(f"Error in frozen_check_loop: {e}")
+            logger.error(f"❌ Heartbeat restart failed: {e}")
 
-        await asyncio.sleep(60)
-
-
-
-
-logger = logging.getLogger(__name__)
-
+# ─── Main Entry ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     logger.info("Loading persisted state from MongoDB...")
     load_state_from_db()
@@ -1590,6 +1494,7 @@ if __name__ == "__main__":
     logger.info("→ Starting Telegram bot client (bot.start)...")
     try:
         bot.start()
+        logger.info("Telegram bot has started.")
     except Exception as e:
         logger.error(f"❌ Failed to start Pyrogram client: {e}")
         sys.exit(1)
@@ -1603,12 +1508,9 @@ if __name__ == "__main__":
     logger.info(f"✅ Bot Username: {BOT_USERNAME}")
     logger.info(f"✅ Bot Link: {BOT_LINK}")
 
-    # start the frozen‑check loop (no handler registration needed)
-    asyncio.get_event_loop().create_task(frozen_check_loop(BOT_USERNAME))
-
     if not assistant.is_connected:
         logger.info("Assistant not connected; starting assistant client...")
-        assistant.run()
+        assistant.start()
         logger.info("Assistant client connected.")
 
     try:
@@ -1624,12 +1526,19 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"❌ Failed to fetch assistant info: {e}")
 
+    # Start the heartbeat task
+    logger.info("→ Starting heartbeat task (auto-restart every 2.5 hours)")
+    asyncio.get_event_loop().create_task(heartbeat())
+
     logger.info("→ Entering idle() (long-polling)")
-    idle()
+    idle()  # keep the bot alive
 
-    bot.stop()
-    logger.info("Bot stopped.")
+    try:
+        bot.stop()
+        logger.info("Bot stopped.")
+    except Exception as e:
+        logger.warning(f"Bot stop failed or already stopped: {e}")
+
     logger.info("✅ All services are up and running. Bot started successfully.")
-
 
 
