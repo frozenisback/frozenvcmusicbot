@@ -60,6 +60,7 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
     f.write(COOKIE_CONTENT)
 
 # optional globals: COOKIE_FILE_PATH, SHARD_CACHE_MATRIX
+SHARD_CACHE_MATRIX = {}
 
 def make_ydl_opts_audio(output_template: str):
     ffmpeg_path = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
