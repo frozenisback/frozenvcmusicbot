@@ -45,21 +45,27 @@ with open(COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
 def make_ydl_opts_audio(output_template: str):
     ffmpeg_path = shutil.which("ffmpeg")
     opts = {
-        'format': 'bestaudio/best',  # auto-detect, supports m3u8 with audio+video
+        'format': 'bestaudio/best',  # auto-detect; works with HLS, DASH, muxed streams
         'outtmpl': output_template,
         'noplaylist': True,
         'quiet': True,
         'socket_timeout': 60,
         'n_threads': 12,
         'concurrent_fragment_downloads': 12,
-        'merge_output_format': 'm4a',  # fallback if container merge needed
         'cookiefile': COOKIE_FILE_PATH,
         'ffmpeg_location': ffmpeg_path,
+
+        # let ffmpeg fix broken/muxed audio streams
         'postprocessors': [{
-            'key': 'FFmpegCopyStream',  # directly copy without re-encoding
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',     # safe default (aac container)
+            'preferredquality': '0',     # keep source bitrate, don’t re-encode unnecessarily
         }],
+        # fallback merge format if needed
+        'merge_output_format': 'm4a',
     }
     return opts
+
 
 
 # --- Replaces API-based downloader with local yt-dlp ---
