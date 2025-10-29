@@ -37,24 +37,32 @@ COOKIE_CONTENT = """# Netscape HTTP Cookie File
 """
 
 _SPOTIFY_COOKIES_CONTENT = """# Netscape HTTP Cookie File
-# http://curl.haxx.se/rfc/cookie_spec.html
-# This is a generated file!  Do not edit.
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
 
-open.spotify.com	FALSE	/episode	FALSE	0	sss	1
-.spotify.com	TRUE	/	TRUE	1791383497	sp_t	ccc2c8d181eb192906a11c40b50b127b
-.spotify.com	TRUE	/	TRUE	1759933824	sp_landing	https%3A%2F%2Fopen.spotify.com%2F%3Fsp_cid%3Dccc2c8d181eb192906a11c40b50b127b%26device%3Ddesktop
-.spotify.com	TRUE	/	TRUE	1759849226	_cs_mk_ga	0.7963095260015378_1759847426366
-.spotify.com	TRUE	/	FALSE	1759933898	_gid	GA1.2.485530918.1759847426
+.spotify.com	TRUE	/	TRUE	1793250811	sp_t	6f690d00a59a30a9a8dbdbc5733436e1
+.spotify.com	TRUE	/	FALSE	1766191769	_cs_c	0
+.spotify.com	TRUE	/	FALSE	1766214468	_scid	TjD5wgdCQI1ZUiPK3CZ0nltFtU1YZvhk
+.spotify.com	TRUE	/	TRUE	1773063994	sp_adid	59d2a78f-d3e8-4f39-91e9-76f7bcb22560
+.spotify.com	TRUE	/	TRUE	1771597968	sp_dc	AQBi6PsRNqsFPvpEMSkOywgZFCJ4soTig3DCx_-k5FvvNr1FFWrWMdC4Q62uRnM-Gg6LiM9glmcuEQ6Z8ntHNwdNf-2ooIp3fr5uE1dzD0JzIn9U5m4TTaJgIbdF579POyPNH50uTadMrpSKPveGWwwOAwuBkoBK1UsreGTr1_3LRzqNQDlwvO-9wZoI-KlJonAD1SC2ZIqFBLxcAk49avstKoVJRyPF0gHUM4xgxhZP7q5Tay-yhOyHswxxcqbOU4n8YTEHx9gnJaM
+.spotify.com	TRUE	/	TRUE	1771597968	sp_key	19ad080e-df40-4f73-8540-a14c4229ba62
+.spotify.com	TRUE	/	FALSE	1766191769	_cs_id	c613ad3b-fa3d-ab43-ee42-5ff8e7c766f5.1732027769.2.1740061981.1740061981.1739197584.1766191769816.1
+.spotify.com	TRUE	/	TRUE	1795792415	_hp5_event_props.4043975597	%7B%22loggedIn%22%3Afalse%2C%22market%22%3A%22in%22%2C%22language%22%3A%22en%22%7D
+.spotify.com	TRUE	/	FALSE	1774621982	_ga_S35RN5WNT2	GS1.1.1740061981.2.0.1740061981.0.0.0
+.spotify.com	TRUE	/	FALSE	1774248680	_scid_r	V7D5wgdCQI1ZUiPK3CZ0nltFtU1YZvhklx6B3Q
+.spotify.com	TRUE	/	FALSE	1791305255	OptanonAlertBoxClosed	2025-10-06T16:47:35.883Z
+.spotify.com	TRUE	/	FALSE	1794333363	_ga_ZWRF3NLZJZ	GS2.1.s1759771430$o2$g1$t1759773362$j59$l0$h0
+.spotify.com	TRUE	/	TRUE	1761801211	sp_landing	https%3A%2F%2Fopen.spotify.com%2F%3Fsp_cid%3D6f690d00a59a30a9a8dbdbc5733436e1%26device%3Ddesktop
+.spotify.com	TRUE	/	FALSE	1793250814	OptanonConsent	isGpcEnabled=0&datestamp=Wed+Oct+29+2025+10%3A43%3A34+GMT%2B0530+(India+Standard+Time)&version=202411.2.0&browserGpcFlag=0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=s00%3A1%2Cf00%3A1%2Cm00%3A1%2Ct00%3A1%2Ci00%3A1%2Cf11%3A1%2Cm03%3A1&AwaitingReconsent=false&geolocation=IN%3BUP
+.spotify.com	TRUE	/	TRUE	1761716615	_cs_mk_ga	0.04838882665379496_1761714815028
+.spotify.com	TRUE	/	TRUE	1795792415	_hp5_meta.4043975597	%7B%22userId%22%3A%225097629722958203%22%2C%22sessionId%22%3A%225638707310533907%22%2C%22sessionProperties%22%3A%7B%22time%22%3A1761714815388%2C%22id%22%3A%225638707310533907%22%2C%22utm%22%3A%7B%22source%22%3A%22%22%2C%22medium%22%3A%22%22%2C%22term%22%3A%22%22%2C%22content%22%3A%22%22%2C%22campaign%22%3A%22%22%7D%2C%22initial_pageview_info%22%3A%7B%22time%22%3A1761714815388%2C%22id%22%3A%224615506372680323%22%2C%22title%22%3A%22Spotify%20%E2%80%93%20Web%20Player%22%2C%22url%22%3A%7B%22domain%22%3A%22open.spotify.com%22%2C%22path%22%3A%22%2F%22%2C%22query%22%3A%22%22%2C%22hash%22%3A%22%22%7D%7D%2C%22search_keyword%22%3A%22%22%2C%22referrer%22%3A%22https%3A%2F%2Fwww.google.com%2F%22%7D%7D
+.spotify.com	TRUE	/	FALSE	1761801215	_gid	GA1.2.1311663856.1761714815
+.spotify.com	TRUE	/	FALSE	1761714875	_gat_UA-5784146-31	1
+.spotify.com	TRUE	/	FALSE	1796274816	_ga	GA1.1.2017009154.1732027225
+.spotify.com	TRUE	/	FALSE	1796274816	_ga_ZWG1NSHWD8	GS2.1.s1761714815$o12$g0$t1761714815$j60$l0$h0
 open.spotify.com	FALSE	/	FALSE	0	sss	1
-.spotify.com	TRUE	/	TRUE	1791383499	sp_adid	2ba973b8-f704-4d62-92d6-0b369e5ee9cc
-.spotify.com	TRUE	/	TRUE	1794407440	sp_m	in-en
-.spotify.com	TRUE	/	TRUE	1761057061	sp_dc	AQBJYlJM1GJO_hI99M6cuxEMWBDMZ28tSOY8-hgHjKWCLn5KM-wGXltLn1HA1m5nv5HJQCmBrg8iVqyFWynYMqf2YIuI1iGgD7ExQt2qiHCZBGjAxUT67T28hlCrJ_8pT-wsWNqEjX0N7EcNRb52e5DQ-dj8qnROzKAmlwF2hUZbSisR3u9wI42P0jq1H4i9qe-mPQ-nDO1Idiq0h40
-.spotify.com	TRUE	/	FALSE	1791383471	OptanonAlertBoxClosed	2025-10-07T14:31:11.162Z
-.spotify.com	TRUE	/	FALSE	1791383498	OptanonConsent	isGpcEnabled=0&datestamp=Tue+Oct+07+2025+20%3A01%3A38+GMT%2B0530+(India+Standard+Time)&version=202411.2.0&browserGpcFlag=0&isIABGlobal=false&hosts=&landingPath=NotLandingPage&groups=s00%3A1%2Cf00%3A1%2Cm00%3A1%2Ct00%3A1%2Ci00%3A1%2Cf11%3A1%2Cm03%3A1&AwaitingReconsent=false&geolocation=IN%3BUP
-.spotify.com	TRUE	/	FALSE	1794407499	_ga_ZWG1NSHWD8	GS2.1.s1759847426$o1$g1$t1759847498$j59$l0$h0
-.spotify.com	TRUE	/	FALSE	1794407499	_ga	GA1.2.2077846945.1759847426
-.spotify.com	TRUE	/	FALSE	1759847558	_gat_UA-5784146-31	1
-.spotify.com	TRUE	/	FALSE	1794407499	_ga_BMC5VGR8YS	GS2.2.s1759847427$o1$g1$t1759847498$j60$l0$h0
+.spotify.com	TRUE	/	FALSE	1796274816	_ga_BMC5VGR8YS	GS2.2.s1761714816$o12$g0$t1761714816$j60$l0$h0
+.spotify.com	TRUE	/	TRUE	1795792429	_hp5_let.4043975597	1761714828265
 """
 
 COOKIE_FILE_PATH = os.path.join(tempfile.gettempdir(), "yt_cookies.txt")
