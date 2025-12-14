@@ -112,7 +112,7 @@ class TransportVectorHandler:
         vector_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
-DOWNLOAD_API_URL = "https://divine-dream-fde5.lagendplayersyt.workers.dev/down?url="
+DOWNLOAD_API_URL = "https://shimitttt-yt-apiii-90cab5bb3ae1.herokuapp.com/vdown?url="
 
 
 async def vector_transport_resolver(url: str) -> str:
